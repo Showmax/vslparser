@@ -2,7 +2,7 @@
 
 Simple and efficient parser for varnishlog output.
 
-## DESCRIPTION
+## Description
 
 `vslparser` is a Go module which provides basic functionality required for
 further processing of `varnishlog` output.
@@ -12,13 +12,13 @@ provided `Parse` function parses a single such entry and returns a convenient
 `Entry` struct. Little processing is required to obtain the `Entry`, only line
 splitting and basic sanity checks are performed.
 
-The `Entry` provides a range of convenience methods which further digest the
+The `Entry` provides a range of convenience methods which further parse the
 entry. This way, only the fields which actually need to be parsed are ever
 processed. The parsing process is therefore about as efficient as it gets, and
 the API is easy to use at the same time.
 
 
-## EXAMPLE
+## Example
 
 Compile this minimal example to start "varnishlog" and use `vslparser` to parse
 its standard output.
@@ -53,10 +53,10 @@ func main() {
 }
 ```
 
-## CONTRIBUTING
+## Contributing
 
 Contributions are welcome. Open a PR and we'll get to you soon.
 
-## LICENSE
+## License
 
 Apache 2.0.

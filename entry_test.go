@@ -15,11 +15,11 @@ func example() *Entry {
 -   Timestamp      Start: 1545037998.267746 9.124000 18.152000
 -   Timestamp      Bad1: 1545037998.267746 foo 37.1248520
 -   Timestamp      Bad2: 1545037998.267746 22.111
--   ReqStart       78.46.103.82 44876
+-   ReqStart       127.0.0.1 44876
 -   ReqMethod      GET
 -   ReqURL         /health
 -   ReqProtocol    HTTP/1.0
--   ReqHeader      X-Forwarded-For: 78.46.103.82
+-   ReqHeader      X-Forwarded-For: 192.168.1.1
 -   VCL_call       RECV
 -   VCL_return     synth
 -   VCL_call       HASH
@@ -60,7 +60,7 @@ func TestTimestamp(t *testing.T) {
 	e := example()
 	stamps := map[string]*Timestamp{
 		"Start": &Timestamp{
-			AbsTime:     time.Unix(1545037998, 267746000),
+			AbsTime:     time.Unix(0, 1545037998267746000),
 			UsSinceUnit: 9124000,
 			UsSincePrev: 18152000,
 		},
@@ -76,8 +76,17 @@ func TestTimestamp(t *testing.T) {
 			t.Errorf("parsing timestamp %q should not fail, got: %v", name, err)
 			continue
 		}
-		if !reflect.DeepEqual(stamp, got) {
-			t.Errorf("parsing timestamp %q should give %v, got %v", name, stamp, got)
+		if !stamp.AbsTime.Equal(got.AbsTime) {
+			t.Errorf("timestamp %q should have AbsTime %v, has %v",
+				name, stamp.AbsTime, got.AbsTime)
+		}
+		if stamp.UsSinceUnit != got.UsSinceUnit {
+			t.Errorf("timestamp %q should have UsSinceUnit %v, has %v",
+				name, stamp.UsSinceUnit, got.UsSinceUnit)
+		}
+		if stamp.UsSincePrev != got.UsSincePrev {
+			t.Errorf("timestamp %q should have UsSincePrev %v, has %v",
+				name, stamp.UsSincePrev, got.UsSincePrev)
 		}
 	}
 	for _, name := range badStamps {

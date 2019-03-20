@@ -45,12 +45,12 @@ func newEntry() *Entry {
 
 // parseUs returns the number of microseconds encoded in the given string.
 func parseUs(s string) (int, error) {
-	seconds, err := strconv.ParseFloat(s, 64)
+	sec, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return 0, errors.Wrap(err, "cannot parse float component")
 	}
-	usecs := int(1000 * 1000 * seconds)
-	return usecs, nil
+	us := int(1e6 * sec)
+	return us, nil
 }
 
 // parseAbsTime returns a time.Time object parsed from the given string.
@@ -59,9 +59,7 @@ func parseAbsTime(s string) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, errors.Wrap(err, "cannot parse absolute time")
 	}
-	sec := int64(us / 1e6)
-	ns := int64(1000 * (us % 1e6))
-	return time.Unix(sec, ns), nil
+	return time.Unix(0, 1e3 * int64(us)).UTC(), nil
 }
 
 // Field returns a fields of the log field with the given key. For example, in
