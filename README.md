@@ -1,6 +1,6 @@
 # vslparser
 
-Simple and efficient parser for varnishlog output.
+Simple and efficient parser of varnishlog output written in Go.
 
 ## Description
 
