@@ -3,6 +3,7 @@ package vslparser
 import (
 	"bufio"
 	"github.com/pkg/errors"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -56,10 +57,15 @@ func splitLine(s string) (string, string) {
 func Parse(scanner *bufio.Scanner) (*Entry, error) {
 	e := newEntry()
 	// Skip empty log lines, they convey no meaning.
+	eof := true
 	for scanner.Scan() {
 		if scanner.Text() != "" {
+			eof = false
 			break
 		}
+	}
+	if eof && scanner.Err() == nil {
+		return nil, io.EOF
 	}
 	// Parse log entry header, e.g.:
 	// *   << BeReq    >> 32086823

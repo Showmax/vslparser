@@ -1,10 +1,12 @@
 package vslparser
 
 import (
-	"testing"
 	"bufio"
-	"strings"
+	"io"
+	"os"
 	"reflect"
+	"strings"
+	"testing"
 )
 
 type kv struct {
@@ -53,6 +55,22 @@ func testParseOK(t *testing.T, e *Entry, s string) {
 	}
 }
 
+// testParseMultipleOK tests that s is parsed as a chain of entries from e
+// without errors.
+func testParseMultipleOK(t *testing.T, e []*Entry, s string) {
+	scanner := stringScanner(s)
+	for _, ent := range e {
+		got, err := Parse(scanner)
+		if err != nil {
+			t.Errorf("failed to parse %q: %v", s, err)
+			return
+		}
+		if !reflect.DeepEqual(ent, got) {
+			t.Errorf("parsing %q should give %v, got %v", s, ent, got)
+		}
+	}
+}
+
 // testParseError tests that parsing s produces an error.
 func testParseError(t *testing.T, s string) {
 	_, err := Parse(stringScanner(s))
@@ -85,10 +103,35 @@ func TestParse(t *testing.T) {
 			},
 		},
 	}, "*   <<  Request >> 40000000\n- Foo Bar\n-Foo Baz\n- Bar     Foo  Bar    Baz	\n- End")
+	testParseMultipleOK(t, []*Entry{
+		&Entry{
+			Kind:   BeReq,
+			VXID:   123,
+			Fields: Fields{},
+		},
+		&Entry{
+			Kind:   BeReq,
+			VXID:   124,
+			Fields: Fields{},
+		},
+	}, "* << BeReq >> 123\n- End\n\n* << BeReq >> 124\n- End")
 
 	testParseError(t, "")
 	testParseError(t, "- ")
 	testParseError(t, "* << Request >> 1\n - Foo Bar\n- End")
 	testParseError(t, "* << Request >> Foo")
 	testParseError(t, "* << Request >> 1")
+}
+
+func TestEOF(t *testing.T) {
+	f, _ := os.Open(os.DevNull)
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	_, err := Parse(scanner)
+	if err != io.EOF {
+		t.Errorf("parsing should result in an EOF error. Got error: '%s'", err)
+	} else {
+		t.Logf("parsing properly returned EOF")
+	}
 }
