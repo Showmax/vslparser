@@ -28,6 +28,7 @@ func example() *Entry {
 -   RespHeader     Date: Mon, 17 Dec 2018 09:13:18 GMT
 -   RespHeader     Server: Varnish
 -   RespHeader     X-Varnish: 29236596
+-   RespHeader     GoWithout:Spaces
 -   Empty
 -   EmptyTwice
 -   RespProtocol   HTTP/1.1
@@ -106,6 +107,7 @@ func TestNamedField(t *testing.T) {
 		"Date":           "Mon, 17 Dec 2018 09:13:18 GMT",
 		"dAtE":           "Mon, 17 Dec 2018 09:13:18 GMT", // mixed case
 		"X-Varnish":      "29236596",
+		"GoWithout":      "Spaces", // no space after :
 	}
 	for name, value := range respHeaders {
 		got, err := e.NamedField("RespHeader", name)
@@ -119,11 +121,11 @@ func TestNamedField(t *testing.T) {
 	}
 	badHeaders := map[string]string{
 		"ReqMethod": "",
-		"": "Date",
-		"Missing": "Name",
+		"":          "Date",
+		"Missing":   "Name",
 		"ReqHeader": "X-Forwarded-For:", // ':' not part of name
-		"Foo": "Bar",
-		"Begin": "re",
+		"Foo":       "Bar",
+		"Begin":     "re",
 	}
 	for key, name := range badHeaders {
 		if v, err := e.NamedField(key, name); err == nil {
@@ -144,13 +146,14 @@ func TestField(t *testing.T) {
 			"Date: Mon, 17 Dec 2018 09:13:18 GMT",
 			"Server: Varnish",
 			"X-Varnish: 29236596",
+			"GoWithout:Spaces",
 			"Access-Control-Allow-Origin: *",
 			"Content-Type: application/json; charset=utf-8",
 			"Content-Length: 2",
 			"Accept-Ranges: bytes",
 			"Connection: close",
 		},
-		"Empty": []string{""},
+		"Empty":      []string{""},
 		"EmptyTwice": []string{"", ""},
 	}
 	for k, vs := range samples {

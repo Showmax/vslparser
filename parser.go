@@ -19,7 +19,8 @@ func white(b byte) bool {
 	return b == ' ' || b == '\t' || b == '\n'
 }
 
-// splitLine splits the log line s into a key and value component efficiently.
+// splitLine splits the log line s into a key and value component efficiently
+// on white-space boundaries.
 func splitLine(s string) (string, string) {
 	l := len(s)
 	ks := 0

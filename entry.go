@@ -59,7 +59,7 @@ func parseAbsTime(s string) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, errors.Wrap(err, "cannot parse absolute time")
 	}
-	return time.Unix(0, 1e3 * int64(us)).UTC(), nil
+	return time.Unix(0, 1e3*int64(us)).UTC(), nil
 }
 
 // Field returns a fields of the log field with the given key. For example, in
@@ -117,13 +117,47 @@ func (e *Entry) URLField(key string) (*url.URL, error) {
 func (e *Entry) HeadersField(key string) (http.Header, error) {
 	h := http.Header{}
 	for _, f := range e.Fields[key] {
-		name, val := splitLine(f)
-		if len(name) == 0 || name[len(name)-1] != ':' {
-			return nil, errors.Errorf("%q in field %q is not an HTTP header", f, key)
+		name, val, err := rfc7230Split(f)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot parse field %q as HTTP headers", key)
 		}
-		h.Add(name[:len(name)-1], val)
+		h.Add(name, val)
 	}
 	return h, nil
+}
+
+// rfc7230Split splits a key-value pair according to the grammar for HTTP
+// header fields described by RFC 7230 into a key and a value component. Please
+// note that only single-line headers may be parsed in this way. (Which is OK,
+// because varnishlog merges multiple logical lines of the header into a single
+// physical line.) Optional white-space around the value is removed, if any.
+//
+// The grammar:
+//
+//     header-field   = field-name ":" OWS field-value OWS
+//     
+//     field-name     = token
+//     field-value    = *( field-content / obs-fold )
+//     field-content  = field-vchar [ 1*( SP / HTAB ) field-vchar ]
+//     field-vchar    = VCHAR / obs-text
+//     
+//     obs-fold       = CRLF 1*( SP / HTAB )
+//                    ; obsolete line folding
+//                    ; see Section 3.2.4
+//     
+//     obs-text       = %x80-FF
+//     
+//     OWS            = *( SP / HTAB )
+//                    ; optional whitespace
+func rfc7230Split(v string) (string, string, error) {
+	colon := strings.Index(v, ":")
+	if colon == -1 {
+		return "", "", errors.Errorf(
+			"no colon (:) separating key and value found in %q", v)
+	}
+	fn := v[:colon]
+	fv := strings.Trim(v[colon+1:], " \t")
+	return fn, fv, nil
 }
 
 // NamedField returns a structured field with the given key, whose name
@@ -140,9 +174,8 @@ func (e *Entry) NamedField(key, name string) (string, error) {
 		return "", err
 	}
 	for _, v := range fs {
-		fn, fv := splitLine(v)
-		l := len(fn) - 1
-		if len(fn) > 0 && strings.EqualFold(fn[:l], name) && fn[l] == ':' {
+		fn, fv, err := rfc7230Split(v)
+		if err == nil && len(fn) > 0 && strings.EqualFold(fn, name) {
 			return fv, nil
 		}
 	}
