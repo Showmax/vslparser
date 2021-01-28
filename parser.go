@@ -70,7 +70,7 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 	// *   << Session  >> 29236595
 	header := strings.Fields(scanner.Text())
 	level := len(header[0]) // number of asterisks
-	if len(header) != 5 || header[0] != strings.Repeat("*", level) {
+	if len(header) != 5 || header[0] != asteriskRepeat(level) {
 		return nil, errors.New("header line was expected")
 	}
 	var err error
@@ -88,7 +88,7 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 		if line == "" {
 			return nil, errors.Errorf("parse error: unexpected empty line")
 		}
-		dashes := strings.Repeat("-", level)
+		dashes := dashRepeat(level)
 		if !strings.HasPrefix(line, dashes) {
 			return nil, errors.Errorf("parse error on line %q: does not start with '%s'", line, dashes)
 		}
@@ -129,4 +129,62 @@ func skipEmptyLines(scanner *bufio.Scanner) error {
 		return io.EOF
 	}
 	return nil
+}
+
+//nolint:gochecknoglobals
+var (
+	dash          = "-"
+	doubleDash    = "--"
+	tripleDash    = "---"
+	quadrupleDash = "----"
+)
+
+// slashRepeat is performance optimization.
+func dashRepeat(i int) string {
+	switch i {
+	case 1:
+		return dash
+	case 2:
+		return doubleDash
+	case 3:
+		return tripleDash
+	case 4:
+		return quadrupleDash
+	// We do not expect five dashes needed as it requires five levels of
+	// log records. In fact, only 3 are expected.
+	//   - Session
+	//   --	Request
+	//   --- BeReq
+	default:
+		return strings.Repeat("-", i)
+	}
+}
+
+//nolint:gochecknoglobals
+var (
+	asterisk          = "*"
+	doubleAsterisk    = "**"
+	tripleAsterisk    = "***"
+	quadrupleAsterisk = "****"
+)
+
+// slashRepeat is performance optimization.
+func asteriskRepeat(i int) string {
+	switch i {
+	case 1:
+		return asterisk
+	case 2:
+		return doubleAsterisk
+	case 3:
+		return tripleAsterisk
+	case 4:
+		return quadrupleAsterisk
+	// We do not expect five dashes needed as it requires five levels of
+	// log records. In fact, only 3 are expected.
+	//   - Session
+	//   --	Request
+	//   --- BeReq
+	default:
+		return strings.Repeat("*", i)
+	}
 }
