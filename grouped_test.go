@@ -19,19 +19,31 @@ const groupExample = `*   << Session  >> 413073608
 func TestParseGroup(t *testing.T) {
 	result := []Entry{
 		{
-			Kind: "Session",
-			VXID: 413073608,
-			Fields: Fields{
-				"Begin": {"sess 0 HTTP/1"},
-				"Link":  {"req 413073609 rxreq"},
+			Kind:  "Session",
+			VXID:  413073608,
+			Level: 1,
+			Tags: []Tag{
+				{
+					Key:   "Begin",
+					Value: "sess 0 HTTP/1",
+				},
+				{
+					Key:   "Link",
+					Value: "req 413073609 rxreq",
+				},
 			},
-		},
-		{
-			Kind: "Request",
-			VXID: 413073609,
-			Fields: Fields{
-				"Begin":  {"req 413073608 rxreq"},
-				"ReqURL": {"/healthz"},
+		}, {
+			Kind:  "Request",
+			Level: 2,
+			VXID:  413073609,
+			Tags: []Tag{
+				{
+					Key:   "Begin",
+					Value: "req 413073608 rxreq",
+				}, {
+					Key:   "ReqURL",
+					Value: "/healthz",
+				},
 			},
 		},
 	}

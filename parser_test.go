@@ -57,7 +57,7 @@ func testParseOK(t *testing.T, e *Entry, s string) {
 
 // testParseMultipleOK tests that s is parsed as a chain of entries from e
 // without errors.
-func testParseMultipleOK(t *testing.T, e []*Entry, s string) {
+func testParseMultipleOK(t *testing.T, e []Entry, s string) {
 	scanner := stringScanner(s)
 	for _, ent := range e {
 		got, err := Parse(scanner)
@@ -65,8 +65,8 @@ func testParseMultipleOK(t *testing.T, e []*Entry, s string) {
 			t.Errorf("failed to parse %q: %v", s, err)
 			return
 		}
-		if !reflect.DeepEqual(ent, got) {
-			t.Errorf("parsing %q should give %v, got %v", s, ent, got)
+		if !reflect.DeepEqual(ent, *got) {
+			t.Errorf("parsing %q should give %v, got %v", s, ent, *got)
 		}
 	}
 }
@@ -81,38 +81,36 @@ func testParseError(t *testing.T, s string) {
 	}
 }
 
+
 // TestParse tests that various inputs are either parsed correctly or produce
 // errors.
 func TestParse(t *testing.T) {
 	testParseOK(t, &Entry{
-		Kind:   BeReq,
-		VXID:   123,
-		Fields: Fields{},
+		Level: 1,
+		Kind:  "BeReq",
+		VXID:  123,
 	}, "* << BeReq >> 123\n- End")
 
 	testParseOK(t, &Entry{
-		Kind: Request,
-		VXID: 40000000,
-		Fields: Fields{
-			"Foo": []string{
-				"Bar",
-				"Baz",
-			},
-			"Bar": []string{
-				"Foo  Bar    Baz	", // Trailing tab valid.
-			},
+		Level: 1,
+		Kind:  "Request",
+		VXID:  40000000,
+		Tags: []Tag{
+			{"Foo", "Bar"},
+			{"Foo", "Baz"},
+			{"Bar", "Foo  Bar    Baz	"}, // Trailing tab valid.
 		},
 	}, "*   <<  Request >> 40000000\n- Foo Bar\n-Foo Baz\n- Bar     Foo  Bar    Baz	\n- End")
-	testParseMultipleOK(t, []*Entry{
-		&Entry{
-			Kind:   BeReq,
-			VXID:   123,
-			Fields: Fields{},
+	testParseMultipleOK(t, []Entry{
+		{
+			Level: 1,
+			Kind:  "BeReq",
+			VXID:  123,
 		},
-		&Entry{
-			Kind:   BeReq,
-			VXID:   124,
-			Fields: Fields{},
+		{
+			Level: 1,
+			Kind:  "BeReq",
+			VXID:  124,
 		},
 	}, "* << BeReq >> 123\n- End\n\n* << BeReq >> 124\n- End")
 
@@ -136,14 +134,52 @@ func TestEOF(t *testing.T) {
 	}
 }
 
+const entryExample = `
+*   << Request  >> 29236596  
+-   Begin          req 29236595 rxreq
+-   Timestamp      Start: 1545037998.267746 9.124000 18.152000
+-   Timestamp      Bad1: 1545037998.267746 foo 37.1248520
+-   Timestamp      Bad2: 1545037998.267746 22.111
+-   ReqStart       127.0.0.1 44876
+-   ReqMethod      GET
+-   ReqURL         /health
+-   ReqProtocol    HTTP/1.0
+-   ReqHeader      X-Forwarded-For: 192.168.1.1
+-   VCL_call       RECV
+-   VCL_return     synth
+-   VCL_call       HASH
+-   VCL_return     lookup
+-   Timestamp      Process: 1545037998.267784 0.000038 0.000038
+-   RespHeader     Date: Mon, 17 Dec 2018 09:13:18 GMT
+-   RespHeader     Server: Varnish
+-   RespHeader     X-Varnish: 29236596
+-   RespHeader     GoWithout:Spaces
+-   Empty
+-   EmptyTwice
+-   RespProtocol   HTTP/1.1
+-   SomeFloat      0.1
+-   RespStatus     200
+-   RespReason     OK
+-   RespReason     OK
+-   VCL_call       SYNTH
+-   RespHeader     Access-Control-Allow-Origin: *
+-   RespHeader     Content-Type: application/json; charset=utf-8
+-   EmptyTwice
+-   VCL_return     deliver
+-   RespHeader     Content-Length: 2
+-   Storage        malloc Transient
+-   RespHeader     Accept-Ranges: bytes
+-   Debug          "RES_MODE 2"
+-   RespHeader     Connection: close
+-   Timestamp      Resp: 1545037998.267831 0.000085 0.000047
+-   ReqAcct        24 0 24 233 2 235
+-   Foo            Bar Not a named field because there's no ':' after 'Key'
+-   End`
+
 func BenchmarkParse(b *testing.B) {
 	scanners := make([]*bufio.Scanner, b.N)
 	for i := range scanners {
-		r := strings.NewReader(`
-*   << Session  >> 413073608
--   Begin          sess 0 HTTP/1
--   Link           req 413073609 rxreq
--   End`)
+		r := strings.NewReader(entryExample)
 		s := bufio.NewScanner(r)
 		scanners[i] = s
 	}

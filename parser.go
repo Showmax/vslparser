@@ -8,11 +8,6 @@ import (
 	"strings"
 )
 
-const (
-	Request = "Request"
-	BeReq   = "BeReq"
-)
-
 // white returns whether the byte b is considered a whitespace character for
 // the purpose of parsing of the log.
 func white(b byte) bool {
@@ -63,8 +58,8 @@ func Parse(scanner *bufio.Scanner) (*Entry, error) {
 }
 
 func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
-	e := newEntry()
-	// Parse log entry header, e.g.:
+	var e Entry
+	// Parse Parselog entry header, e.g.:
 	// *   << BeReq    >> 32086823
 	// *   << Request  >> 32742536
 	// *   << Session  >> 29236595
@@ -74,6 +69,7 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 		return nil, errors.New("header line was expected")
 	}
 	var err error
+	e.Level = len(header[0]) // number of asterisks
 	e.Kind = header[2]
 	if e.VXID, err = strconv.Atoi(header[4]); err != nil {
 		return nil, errors.Wrap(err, "failed to parse VXID")
@@ -100,10 +96,9 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 			foundEnd = true
 			break
 		}
-		if _, ok := e.Fields[k]; !ok {
-			e.Fields[k] = make([]string, 0)
-		}
-		e.Fields[k] = append(e.Fields[k], v)
+		e.Tags = append(e.Tags,
+			Tag{Key: k, Value: v},
+		)
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
@@ -111,7 +106,7 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 	if !foundEnd {
 		return nil, errors.New("unexpected EOF in the middle of a log entry")
 	}
-	return e, nil
+	return &e, nil
 }
 
 func skipEmptyLines(scanner *bufio.Scanner) error {
