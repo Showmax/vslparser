@@ -56,24 +56,21 @@ func splitLine(s string) (string, string) {
 // lines into fields with a key and a value, are performed. The Entry struct
 // provides various convenience methods which perform the subsequent parsing.
 func Parse(scanner *bufio.Scanner) (*Entry, error) {
+	if err := skipEmptyLines(scanner); err != nil {
+		return nil, err
+	}
+	return parseEntry(scanner)
+}
+
+func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 	e := newEntry()
-	// Skip empty log lines, they convey no meaning.
-	eof := true
-	for scanner.Scan() {
-		if scanner.Text() != "" {
-			eof = false
-			break
-		}
-	}
-	if eof && scanner.Err() == nil {
-		return nil, io.EOF
-	}
 	// Parse log entry header, e.g.:
 	// *   << BeReq    >> 32086823
 	// *   << Request  >> 32742536
 	// *   << Session  >> 29236595
 	header := strings.Fields(scanner.Text())
-	if len(header) != 5 || header[0] != "*" {
+	level := len(header[0]) // number of asterisks
+	if len(header) != 5 || header[0] != strings.Repeat("*", level) {
 		return nil, errors.New("header line was expected")
 	}
 	var err error
@@ -91,10 +88,11 @@ func Parse(scanner *bufio.Scanner) (*Entry, error) {
 		if line == "" {
 			return nil, errors.Errorf("parse error: unexpected empty line")
 		}
-		if line[0] != '-' {
-			return nil, errors.Errorf("parse error on line %q: does not start with '-'", line)
+		dashes := strings.Repeat("-", level)
+		if !strings.HasPrefix(line, dashes) {
+			return nil, errors.Errorf("parse error on line %q: does not start with '%s'", line, dashes)
 		}
-		k, v := splitLine(line[1:])
+		k, v := splitLine(line[level:])
 		if k == "" {
 			return nil, errors.Errorf("parse error on line %q: empty key", line)
 		}
@@ -114,4 +112,21 @@ func Parse(scanner *bufio.Scanner) (*Entry, error) {
 		return nil, errors.New("unexpected EOF in the middle of a log entry")
 	}
 	return e, nil
+}
+
+func skipEmptyLines(scanner *bufio.Scanner) error {
+	eof := true
+	for scanner.Scan() {
+		if len(scanner.Bytes()) > 0 {
+			eof = false
+			break
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	if eof {
+		return io.EOF
+	}
+	return nil
 }

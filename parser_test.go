@@ -18,11 +18,11 @@ type kv struct {
 // keys/values in the input line and that white-space is preserved at the tail
 // of the value.
 func TestSplitLine(t *testing.T) {
-	samples := map[string]kv {
-		"": kv{},
-		"    foo    ": kv{k: "foo"},
-		"foo bar": kv{k: "foo", v: "bar"},
-		"  foo  bar": kv{k: "foo", v: "bar"},
+	samples := map[string]kv{
+		"":               kv{},
+		"    foo    ":    kv{k: "foo"},
+		"foo bar":        kv{k: "foo", v: "bar"},
+		"  foo  bar":     kv{k: "foo", v: "bar"},
 		" foo    bar   ": kv{k: "foo", v: "bar   "},
 		"				 foo	bar	 ": kv{k: "foo", v: "bar	 "},
 	}
@@ -85,8 +85,8 @@ func testParseError(t *testing.T, s string) {
 // errors.
 func TestParse(t *testing.T) {
 	testParseOK(t, &Entry{
-		Kind: BeReq,
-		VXID: 123,
+		Kind:   BeReq,
+		VXID:   123,
 		Fields: Fields{},
 	}, "* << BeReq >> 123\n- End")
 
@@ -133,5 +133,25 @@ func TestEOF(t *testing.T) {
 		t.Errorf("parsing should result in an EOF error. Got error: '%s'", err)
 	} else {
 		t.Logf("parsing properly returned EOF")
+	}
+}
+
+func BenchmarkParse(b *testing.B) {
+	scanners := make([]*bufio.Scanner, b.N)
+	for i := range scanners {
+		r := strings.NewReader(`
+*   << Session  >> 413073608
+-   Begin          sess 0 HTTP/1
+-   Link           req 413073609 rxreq
+-   End`)
+		s := bufio.NewScanner(r)
+		scanners[i] = s
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s := scanners[i]
+		if _, err := Parse(s); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
