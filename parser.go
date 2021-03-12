@@ -2,10 +2,11 @@ package vslparser
 
 import (
 	"bufio"
-	"github.com/pkg/errors"
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // white returns whether the byte b is considered a whitespace character for
@@ -64,12 +65,11 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 	// *   << Request  >> 32742536
 	// *   << Session  >> 29236595
 	header := strings.Fields(scanner.Text())
-	level := len(header[0]) // number of asterisks
-	if len(header) != 5 || header[0] != asteriskRepeat(level) {
+	e.Level = len(header[0]) // number of asterisks
+	if len(header) != 5 || header[0] != asteriskRepeat(e.Level) {
 		return nil, errors.New("header line was expected")
 	}
 	var err error
-	e.Level = len(header[0]) // number of asterisks
 	e.Kind = header[2]
 	if e.VXID, err = strconv.Atoi(header[4]); err != nil {
 		return nil, errors.Wrap(err, "failed to parse VXID")
@@ -82,13 +82,13 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" {
-			return nil, errors.Errorf("parse error: unexpected empty line")
+			return nil, errors.New("parse error: unexpected empty line")
 		}
-		dashes := dashRepeat(level)
+		dashes := dashRepeat(e.Level)
 		if !strings.HasPrefix(line, dashes) {
 			return nil, errors.Errorf("parse error on line %q: does not start with '%s'", line, dashes)
 		}
-		k, v := splitLine(line[level:])
+		k, v := splitLine(line[e.Level:])
 		if k == "" {
 			return nil, errors.Errorf("parse error on line %q: empty key", line)
 		}
@@ -126,60 +126,36 @@ func skipEmptyLines(scanner *bufio.Scanner) error {
 	return nil
 }
 
-//nolint:gochecknoglobals
-var (
-	dash          = "-"
-	doubleDash    = "--"
-	tripleDash    = "---"
-	quadrupleDash = "----"
-)
-
 // slashRepeat is performance optimization.
 func dashRepeat(i int) string {
 	switch i {
 	case 1:
-		return dash
+		return "-"
 	case 2:
-		return doubleDash
+		return "--"
 	case 3:
-		return tripleDash
+		return "---"
 	case 4:
-		return quadrupleDash
-	// We do not expect five dashes needed as it requires five levels of
-	// log records. In fact, only 3 are expected.
-	//   - Session
-	//   --	Request
-	//   --- BeReq
+		return "----"
 	default:
+		// Unlikely.
 		return strings.Repeat("-", i)
 	}
 }
-
-//nolint:gochecknoglobals
-var (
-	asterisk          = "*"
-	doubleAsterisk    = "**"
-	tripleAsterisk    = "***"
-	quadrupleAsterisk = "****"
-)
 
 // slashRepeat is performance optimization.
 func asteriskRepeat(i int) string {
 	switch i {
 	case 1:
-		return asterisk
+		return "*"
 	case 2:
-		return doubleAsterisk
+		return "**"
 	case 3:
-		return tripleAsterisk
+		return "***"
 	case 4:
-		return quadrupleAsterisk
-	// We do not expect five dashes needed as it requires five levels of
-	// log records. In fact, only 3 are expected.
-	//   - Session
-	//   --	Request
-	//   --- BeReq
+		return "****"
 	default:
+		// Unlikely.
 		return strings.Repeat("*", i)
 	}
 }

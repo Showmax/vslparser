@@ -24,7 +24,7 @@ func ParseGroup(scanner *bufio.Scanner) ([]Entry, error) {
 	var ee []Entry
 	// do { } while scanner.Scan()
 	for ok := true; ok; ok = scanner.Scan() {
-		//
+		// Groups are separated with an empty line (\n\n).
 		if len(scanner.Bytes()) == 0 {
 			break
 		}

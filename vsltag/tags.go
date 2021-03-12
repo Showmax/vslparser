@@ -13,6 +13,8 @@ import (
 // Based on Varnish docs
 // https://varnish-cache.org/docs/trunk/reference/vsl.html
 
+// BackendOpen stands for Backend connection opened. Logged when a new backend
+// connection is opened.
 type BackendOpen vslparser.Tag
 
 func (l BackendOpen) FileDescriptor() int {
@@ -53,26 +55,33 @@ func (b Begin) Reason() string {
 	return b.Value[i+1:]
 }
 
+// BereqMethod stands for Backend request method. The HTTP request method used.
 type BereqMethod vslparser.Tag
 
 func (b BereqMethod) Method() string {
 	return b.Value
 }
 
+// BerespProtocol stands for Backend response protocol. The HTTP protocol version
+// information.
 type BerespProtocol vslparser.Tag
 
 func (b BerespProtocol) Protocol() string {
 	return b.Value
 }
 
+// BerespStatus stands for Backend response status. The HTTP response status
+// code.
 type BerespStatus vslparser.Tag
 
 func (b BerespStatus) Status() int {
 	return parseInt(b.Value)
 }
 
+// Link links to a child VXID. Links this VXID to any child VXID it initiates.
 type Link vslparser.Tag
 
+// ChildType returns "req" or "bereq"
 func (l Link) ChildType() string {
 	sp := strings.SplitN(l.Value, " ", 2)
 	return sp[0]
@@ -88,6 +97,7 @@ func (l Link) Reason() string {
 	return l.Value[i+1:]
 }
 
+// ReqURL contains client request URL. The HTTP request URL.
 type ReqURL vslparser.Tag
 
 func (r ReqURL) URL() url.URL {
@@ -95,6 +105,7 @@ func (r ReqURL) URL() url.URL {
 	return *u
 }
 
+// SessClose is the last record for any client connection.
 type SessClose vslparser.Tag
 
 func (s SessClose) Reason() string {
@@ -107,6 +118,7 @@ func (s SessClose) Duration() time.Duration {
 	return parseDuration(s.Value[i+1:])
 }
 
+// SessOpen is the first record for a client connection, with the socket-endpoints of the connection.
 type SessOpen vslparser.Tag
 
 func (s SessOpen) RemoteAddr() (addr net.IP, port int) {
@@ -134,6 +146,7 @@ func (s SessOpen) FileDescriptor() int {
 	return parseInt(sp[6])
 }
 
+// Timestamp contains timing information for the Varnish worker threads.
 type Timestamp vslparser.Tag
 
 func (t Timestamp) Event() string {
@@ -156,6 +169,7 @@ func (t Timestamp) SinceLast() time.Duration {
 	return parseDuration(t.Value[i+1:])
 }
 
+// Hit object in cache. Object looked up in cache.
 type Hit vslparser.Tag
 
 func (h Hit) VXID() int {

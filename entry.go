@@ -1,7 +1,7 @@
 package vslparser
 
 // Entry holds a single log entry. An entry consists mostly of a collection of
-// log fields.
+// log fields, called Tags.
 type Entry struct {
 	Level int
 	Kind  string
@@ -9,20 +9,20 @@ type Entry struct {
 	Tags  []Tag
 }
 
-// Tag is the key/value pair of VSL tag.
+// Tag is the key/value pair making up a VSL tag.
 type Tag struct {
 	Key   string
 	Value string
 }
 
-// Tags works as ordered dictionary for better search in tags. It's meant to be
-// read-only.
+// Tags work as ordered dictionary for faster search in tags. They're meant
+// to be read-only.
 type Tags struct {
 	lookup map[string][]*Tag
 	list   []Tag
 }
 
-// NewTags creates Tags structure and does the expensive allocation.
+// NewTags creates a Tags structure and does the expensive allocation.
 func NewTags(tags []Tag) Tags {
 	t := Tags{
 		lookup: make(map[string][]*Tag),
