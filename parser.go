@@ -2,11 +2,11 @@ package vslparser
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // white returns whether the byte b is considered a whitespace character for
@@ -72,7 +72,7 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 	var err error
 	e.Kind = header[2]
 	if e.VXID, err = strconv.Atoi(header[4]); err != nil {
-		return nil, errors.Wrap(err, "failed to parse VXID")
+		return nil, fmt.Errorf("failed to parse VXID: %w", err)
 	}
 	// Parse log entries, e.g.:
 	// -   ReqStart       136.243.103.218 53602
@@ -86,11 +86,11 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 		}
 		dashes := dashRepeat(e.Level)
 		if !strings.HasPrefix(line, dashes) {
-			return nil, errors.Errorf("parse error on line %q: does not start with '%s'", line, dashes)
+			return nil, fmt.Errorf("parse error on line %q: does not start with '%s'", line, dashes)
 		}
 		k, v := splitLine(line[e.Level:])
 		if k == "" {
-			return nil, errors.Errorf("parse error on line %q: empty key", line)
+			return nil, fmt.Errorf("parse error on line %q: empty key", line)
 		}
 		if k == "End" {
 			foundEnd = true
