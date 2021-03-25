@@ -27,10 +27,12 @@ its standard output.
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"github.com/Showmax/vslparser"
 	"log"
 	"os/exec"
+
+	"github.com/Showmax/vslparser"
 )
 
 func main() {

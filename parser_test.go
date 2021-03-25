@@ -81,7 +81,6 @@ func testParseError(t *testing.T, s string) {
 	}
 }
 
-
 // TestParse tests that various inputs are either parsed correctly or produce
 // errors.
 func TestParse(t *testing.T) {
