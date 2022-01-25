@@ -1,13 +1,14 @@
 package vsltag
 
 import (
-	"github.com/Showmax/vslparser"
 	"math"
 	"net"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Showmax/vslparser"
 )
 
 // Based on Varnish docs
@@ -100,9 +101,8 @@ func (l Link) Reason() string {
 // ReqURL contains client request URL. The HTTP request URL.
 type ReqURL vslparser.Tag
 
-func (r ReqURL) URL() url.URL {
-	u, _ := url.Parse(r.Value)
-	return *u
+func (r ReqURL) URL() (*url.URL, error) {
+	return url.Parse(r.Value)
 }
 
 // SessClose is the last record for any client connection.
