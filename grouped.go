@@ -21,6 +21,7 @@ func ParseGroup(scanner *bufio.Scanner) ([]Entry, error) {
 	if err := skipEmptyLines(scanner); err != nil {
 		return nil, err
 	}
+
 	var ee []Entry
 	// do { } while scanner.Scan()
 	for ok := true; ok; ok = scanner.Scan() {

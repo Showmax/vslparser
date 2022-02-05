@@ -20,26 +20,18 @@ func white(b byte) bool {
 func splitLine(s string) (string, string) {
 	l := len(s)
 	ks := 0
-	for ks < l {
-		if !white(s[ks]) {
-			break
-		}
-		ks++
+
+	for ; ks < l && white(s[ks]); ks++ {
 	}
+
 	ke := ks
-	for ke < l {
-		if white(s[ke]) {
-			break
-		}
-		ke++
+	for ; ke < l && !white(s[ke]); ke++ {
 	}
+
 	vs := ke
-	for vs < l {
-		if !white(s[vs]) {
-			break
-		}
-		vs++
+	for ; vs < l && white(s[vs]); vs++ {
 	}
+
 	return s[ks:ke], s[vs:]
 }
 
@@ -60,20 +52,23 @@ func Parse(scanner *bufio.Scanner) (*Entry, error) {
 
 func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 	var e Entry
+
 	// Parse Parselog entry header, e.g.:
 	// *   << BeReq    >> 32086823
 	// *   << Request  >> 32742536
 	// *   << Session  >> 29236595
 	header := strings.Fields(scanner.Text())
-	e.Level = len(header[0]) // number of asterisks
-	if len(header) != 5 || header[0] != asteriskRepeat(e.Level) {
+	if len(header) != 5 || !isFullOfAsterisks(header[0]) {
 		return nil, errors.New("header line was expected")
 	}
+	e.Level = len(header[0]) // number of asterisks
+
 	var err error
 	e.Kind = header[2]
 	if e.VXID, err = strconv.Atoi(header[4]); err != nil {
 		return nil, fmt.Errorf("failed to parse VXID: %w", err)
 	}
+
 	// Parse log entries, e.g.:
 	// -   ReqStart       136.243.103.218 53602
 	// -   ReqURL         /health
@@ -84,10 +79,11 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 		if line == "" {
 			return nil, errors.New("parse error: unexpected empty line")
 		}
-		dashes := dashRepeat(e.Level)
-		if !strings.HasPrefix(line, dashes) {
-			return nil, fmt.Errorf("parse error on line %q: does not start with '%s'", line, dashes)
+
+		if !hasDashPrefix(line, e.Level) {
+			return nil, fmt.Errorf("parse error on line %q: does not start with %d dashes", line, e.Level)
 		}
+
 		k, v := splitLine(line[e.Level:])
 		if k == "" {
 			return nil, fmt.Errorf("parse error on line %q: empty key", line)
@@ -96,9 +92,8 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 			foundEnd = true
 			break
 		}
-		e.Tags = append(e.Tags,
-			Tag{Key: k, Value: v},
-		)
+
+		e.Tags = append(e.Tags, Tag{Key: k, Value: v})
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
@@ -126,36 +121,27 @@ func skipEmptyLines(scanner *bufio.Scanner) error {
 	return nil
 }
 
-// slashRepeat is performance optimization.
-func dashRepeat(i int) string {
-	switch i {
-	case 1:
-		return "-"
-	case 2:
-		return "--"
-	case 3:
-		return "---"
-	case 4:
-		return "----"
-	default:
-		// Unlikely.
-		return strings.Repeat("-", i)
+// hasDashPrefix asserts that string s starts with at least n dashes ('-').
+func hasDashPrefix(s string, n int) bool {
+	if len(s) < n {
+		return false
 	}
+
+	for i := 0; i < n; i++ {
+		if s[i] != '-' {
+			return false
+		}
+	}
+
+	return true
 }
 
-// slashRepeat is performance optimization.
-func asteriskRepeat(i int) string {
-	switch i {
-	case 1:
-		return "*"
-	case 2:
-		return "**"
-	case 3:
-		return "***"
-	case 4:
-		return "****"
-	default:
-		// Unlikely.
-		return strings.Repeat("*", i)
+// isFullOfAsterisks checks that whole line is full of asterisks.
+func isFullOfAsterisks(s string) bool {
+	for _, c := range s {
+		if c != '*' {
+			return false
+		}
 	}
+	return true
 }

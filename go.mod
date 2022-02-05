@@ -1,3 +1,3 @@
 module github.com/Showmax/vslparser
 
-go 1.15
+go 1.17

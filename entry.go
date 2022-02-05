@@ -56,7 +56,7 @@ func (t *Tags) LastWithKey(key string) (Tag, bool) {
 	if !ok {
 		return Tag{}, false
 	}
-	if len(tags) < 1 {
+	if len(tags) == 0 {
 		return Tag{}, false
 	}
 	return *tags[len(tags)-1], true
