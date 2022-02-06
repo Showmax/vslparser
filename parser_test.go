@@ -65,8 +65,8 @@ func testParseMultipleOK(t *testing.T, e []Entry, s string) {
 			t.Errorf("failed to parse %q: %v", s, err)
 			return
 		}
-		if !reflect.DeepEqual(ent, *got) {
-			t.Errorf("parsing %q should give %v, got %v", s, ent, *got)
+		if !reflect.DeepEqual(ent, got) {
+			t.Errorf("parsing %q should give %v, got %v", s, ent, got)
 		}
 	}
 }
@@ -134,7 +134,7 @@ func TestEOF(t *testing.T) {
 }
 
 const entryExample = `
-*   << Request  >> 29236596  
+*   << Request  >> 29236596
 -   Begin          req 29236595 rxreq
 -   Timestamp      Start: 1545037998.267746 9.124000 18.152000
 -   Timestamp      Bad1: 1545037998.267746 foo 37.1248520
@@ -182,6 +182,7 @@ func BenchmarkParse(b *testing.B) {
 		s := bufio.NewScanner(r)
 		scanners[i] = s
 	}
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		s := scanners[i]

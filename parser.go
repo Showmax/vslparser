@@ -43,14 +43,14 @@ func splitLine(s string) (string, string) {
 // is kept mostly in its textual form. Only basic processing, such as splitting
 // lines into fields with a key and a value, are performed. The Entry struct
 // provides various convenience methods which perform the subsequent parsing.
-func Parse(scanner *bufio.Scanner) (*Entry, error) {
+func Parse(scanner *bufio.Scanner) (Entry, error) {
 	if err := skipEmptyLines(scanner); err != nil {
-		return nil, err
+		return Entry{}, err
 	}
 	return parseEntry(scanner)
 }
 
-func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
+func parseEntry(scanner *bufio.Scanner) (Entry, error) {
 	var e Entry
 
 	// Parse Parselog entry header, e.g.:
@@ -59,14 +59,14 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 	// *   << Session  >> 29236595
 	header := strings.Fields(scanner.Text())
 	if len(header) != 5 || !isFullOfAsterisks(header[0]) {
-		return nil, errors.New("header line was expected")
+		return Entry{}, errors.New("header line was expected")
 	}
 	e.Level = len(header[0]) // number of asterisks
 
 	var err error
 	e.Kind = header[2]
 	if e.VXID, err = strconv.Atoi(header[4]); err != nil {
-		return nil, fmt.Errorf("failed to parse VXID: %w", err)
+		return Entry{}, fmt.Errorf("failed to parse VXID: %w", err)
 	}
 
 	// Parse log entries, e.g.:
@@ -77,16 +77,16 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" {
-			return nil, errors.New("parse error: unexpected empty line")
+			return Entry{}, errors.New("parse error: unexpected empty line")
 		}
 
 		if !hasDashPrefix(line, e.Level) {
-			return nil, fmt.Errorf("parse error on line %q: does not start with %d dashes", line, e.Level)
+			return Entry{}, fmt.Errorf("parse error on line %q: does not start with %d dashes", line, e.Level)
 		}
 
 		k, v := splitLine(line[e.Level:])
 		if k == "" {
-			return nil, fmt.Errorf("parse error on line %q: empty key", line)
+			return Entry{}, fmt.Errorf("parse error on line %q: empty key", line)
 		}
 		if k == "End" {
 			foundEnd = true
@@ -96,12 +96,12 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 		e.Tags = append(e.Tags, Tag{Key: k, Value: v})
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return Entry{}, err
 	}
 	if !foundEnd {
-		return nil, errors.New("unexpected EOF in the middle of a log entry")
+		return Entry{}, errors.New("unexpected EOF in the middle of a log entry")
 	}
-	return &e, nil
+	return e, nil
 }
 
 func skipEmptyLines(scanner *bufio.Scanner) error {

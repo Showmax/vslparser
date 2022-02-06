@@ -18,6 +18,7 @@ func Example() {
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
+
 	scanner := bufio.NewScanner(stdout)
 	for {
 		entry, err := vslparser.Parse(scanner)

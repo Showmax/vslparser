@@ -33,7 +33,7 @@ func ParseGroup(scanner *bufio.Scanner) ([]Entry, error) {
 		if err != nil {
 			return nil, err
 		}
-		ee = append(ee, *e)
+		ee = append(ee, e)
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
