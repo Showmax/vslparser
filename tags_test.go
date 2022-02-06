@@ -7,35 +7,34 @@ import (
 	"github.com/Showmax/vslparser"
 )
 
-func BenchmarkTags_New(b *testing.B) {
+func testTagArray() []vslparser.Tag {
 	const (
-		uniqueCnt    = 50
-		nonUniqueCnt = 50
+		uniqueCnt    = 500
+		nonUniqueCnt = 500
 		mod          = 5
 	)
-
 	const totalCnt = uniqueCnt + nonUniqueCnt
 
-	tagsArr := make([]vslparser.Tag, totalCnt)
+	arr := make([]vslparser.Tag, totalCnt)
 	for i := 0; i < totalCnt; i++ {
 		val := strconv.Itoa(i)
 
 		if i < uniqueCnt {
-			tagsArr[i] = vslparser.Tag{Key: val, Value: val}
+			arr[i] = vslparser.Tag{Key: val, Value: val}
 		} else {
 			key := "non-unique-" + strconv.Itoa(i%mod)
-			tagsArr[i] = vslparser.Tag{Key: key, Value: val}
+			arr[i] = vslparser.Tag{Key: key, Value: val}
 		}
 	}
 
-	arrs := make([][]vslparser.Tag, b.N)
-	for i := range arrs {
-		arrs[i] = make([]vslparser.Tag, len(tagsArr))
-		copy(arrs[i], tagsArr)
-	}
+	return arr
+}
+
+func BenchmarkTags_AllWithKey(b *testing.B) {
+	tags := vslparser.Tags(testTagArray())
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		vslparser.NewTags(arrs[i])
+		_ = tags.AllWithKey("non-unique-1")
 	}
 }
