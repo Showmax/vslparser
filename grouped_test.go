@@ -1,7 +1,7 @@
 package vslparser
 
 import (
-	"bufio"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
@@ -90,9 +90,8 @@ func TestParseGroup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := strings.NewReader(tt.varnishlogs)
-			s := bufio.NewScanner(r)
-			got, err := ParseGroup(s)
+			parser := NewParser(strings.NewReader(tt.varnishlogs))
+			got, err := parser.ParseGroup()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseGroup() error = %v, wantErr %v",
 					err, tt.wantErr)
@@ -106,16 +105,15 @@ func TestParseGroup(t *testing.T) {
 }
 
 func BenchmarkParseGroup(b *testing.B) {
-	scanners := make([]*bufio.Scanner, b.N)
-	for i := range scanners {
-		r := strings.NewReader(groupExample)
-		s := bufio.NewScanner(r)
-		scanners[i] = s
+	readers := make([]io.Reader, b.N)
+	for i := range readers {
+		readers[i] = strings.NewReader(groupExample)
 	}
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		s := scanners[i]
-		if _, err := ParseGroup(s); err != nil {
+		parser := NewParser(readers[i])
+		if _, err := parser.ParseGroup(); err != nil {
 			b.Fatal(err)
 		}
 	}

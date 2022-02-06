@@ -1,7 +1,6 @@
 package vslparser_test
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os/exec"
@@ -19,9 +18,9 @@ func Example() {
 		log.Fatal(err)
 	}
 
-	scanner := bufio.NewScanner(stdout)
+	parser := vslparser.NewParser(stdout)
 	for {
-		entry, err := vslparser.Parse(scanner)
+		entry, err := parser.Parse()
 		if err != nil {
 			log.Fatal(err)
 		}

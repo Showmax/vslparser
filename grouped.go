@@ -1,7 +1,6 @@
 package vslparser
 
 import (
-	"bufio"
 	"io"
 )
 
@@ -17,25 +16,25 @@ import (
 //	--  Begin          req 413073608 rxreq
 //	--  ReqURL         /healthz
 //	--  End
-func ParseGroup(scanner *bufio.Scanner) ([]Entry, error) {
-	if err := skipEmptyLines(scanner); err != nil {
+func (p *Parser) ParseGroup() ([]Entry, error) {
+	if err := skipEmptyLines(p.scanner); err != nil {
 		return nil, err
 	}
 
 	var ee []Entry
 	// do { } while scanner.Scan()
-	for ok := true; ok; ok = scanner.Scan() {
+	for ok := true; ok; ok = p.scanner.Scan() {
 		// Groups are separated with an empty line (\n\n).
-		if len(scanner.Bytes()) == 0 {
+		if len(p.scanner.Bytes()) == 0 {
 			break
 		}
-		e, err := parseEntry(scanner)
+		e, err := parseEntry(p.scanner)
 		if err != nil {
 			return nil, err
 		}
 		ee = append(ee, e)
 	}
-	if err := scanner.Err(); err != nil {
+	if err := p.scanner.Err(); err != nil {
 		return nil, err
 	}
 	if len(ee) == 0 {
