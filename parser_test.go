@@ -1,7 +1,6 @@
 package vslparser
 
 import (
-	"bufio"
 	"io"
 	"os"
 	"reflect"
@@ -19,12 +18,12 @@ type kv struct {
 // of the value.
 func TestSplitLine(t *testing.T) {
 	samples := map[string]kv{
-		"":               kv{},
-		"    foo    ":    kv{k: "foo"},
-		"foo bar":        kv{k: "foo", v: "bar"},
-		"  foo  bar":     kv{k: "foo", v: "bar"},
-		" foo    bar   ": kv{k: "foo", v: "bar   "},
-		"				 foo	bar	 ": kv{k: "foo", v: "bar	 "},
+		"":               {},
+		"    foo    ":    {k: "foo"},
+		"foo bar":        {k: "foo", v: "bar"},
+		"  foo  bar":     {k: "foo", v: "bar"},
+		" foo    bar   ": {k: "foo", v: "bar   "},
+		"				 foo	bar	 ": {k: "foo", v: "bar	 "},
 	}
 	for line, kv := range samples {
 		gk, gv := splitLine(line)
@@ -37,15 +36,9 @@ func TestSplitLine(t *testing.T) {
 	}
 }
 
-// stringScanner is a helper which provides suitable bufio.Scanner object that
-// can be passed to Parse so that the given string is processed by the parser.
-func stringScanner(s string) *bufio.Scanner {
-	return bufio.NewScanner(strings.NewReader(s))
-}
-
 // testParseOK tests that s is parsed as e without errors.
-func testParseOK(t *testing.T, e *Entry, s string) {
-	got, err := Parse(stringScanner(s))
+func testParseOK(t *testing.T, e Entry, s string) {
+	got, err := NewParser(strings.NewReader(s)).Parse()
 	if err != nil {
 		t.Errorf("failed to parse %q: %v", s, err)
 		return
@@ -58,22 +51,22 @@ func testParseOK(t *testing.T, e *Entry, s string) {
 // testParseMultipleOK tests that s is parsed as a chain of entries from e
 // without errors.
 func testParseMultipleOK(t *testing.T, e []Entry, s string) {
-	scanner := stringScanner(s)
+	parser := NewParser(strings.NewReader(s))
 	for _, ent := range e {
-		got, err := Parse(scanner)
+		got, err := parser.Parse()
 		if err != nil {
 			t.Errorf("failed to parse %q: %v", s, err)
 			return
 		}
-		if !reflect.DeepEqual(ent, *got) {
-			t.Errorf("parsing %q should give %v, got %v", s, ent, *got)
+		if !reflect.DeepEqual(ent, got) {
+			t.Errorf("parsing %q should give %v, got %v", s, ent, got)
 		}
 	}
 }
 
 // testParseError tests that parsing s produces an error.
 func testParseError(t *testing.T, s string) {
-	_, err := Parse(stringScanner(s))
+	_, err := NewParser(strings.NewReader(s)).Parse()
 	if err == nil {
 		t.Errorf("parsing %q should be a parse error", s)
 	} else {
@@ -84,13 +77,13 @@ func testParseError(t *testing.T, s string) {
 // TestParse tests that various inputs are either parsed correctly or produce
 // errors.
 func TestParse(t *testing.T) {
-	testParseOK(t, &Entry{
+	testParseOK(t, Entry{
 		Level: 1,
 		Kind:  "BeReq",
 		VXID:  123,
 	}, "* << BeReq >> 123\n- End")
 
-	testParseOK(t, &Entry{
+	testParseOK(t, Entry{
 		Level: 1,
 		Kind:  "Request",
 		VXID:  40000000,
@@ -124,8 +117,7 @@ func TestEOF(t *testing.T) {
 	f, _ := os.Open(os.DevNull)
 	defer f.Close()
 
-	scanner := bufio.NewScanner(f)
-	_, err := Parse(scanner)
+	_, err := NewParser(f).Parse()
 	if err != io.EOF {
 		t.Errorf("parsing should result in an EOF error. Got error: '%s'", err)
 	} else {
@@ -134,7 +126,7 @@ func TestEOF(t *testing.T) {
 }
 
 const entryExample = `
-*   << Request  >> 29236596  
+*   << Request  >> 29236596
 -   Begin          req 29236595 rxreq
 -   Timestamp      Start: 1545037998.267746 9.124000 18.152000
 -   Timestamp      Bad1: 1545037998.267746 foo 37.1248520
@@ -176,16 +168,15 @@ const entryExample = `
 -   End`
 
 func BenchmarkParse(b *testing.B) {
-	scanners := make([]*bufio.Scanner, b.N)
-	for i := range scanners {
-		r := strings.NewReader(entryExample)
-		s := bufio.NewScanner(r)
-		scanners[i] = s
+	readers := make([]io.Reader, b.N)
+	for i := range readers {
+		readers[i] = strings.NewReader(entryExample)
 	}
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		s := scanners[i]
-		if _, err := Parse(s); err != nil {
+		parser := NewParser(readers[i])
+		if _, err := parser.Parse(); err != nil {
 			b.Fatal(err)
 		}
 	}

@@ -1,6 +1,7 @@
 package vsltag
 
 import (
+	"fmt"
 	"math"
 	"net"
 	"net/url"
@@ -59,25 +60,19 @@ func (b Begin) Reason() string {
 // BereqMethod stands for Backend request method. The HTTP request method used.
 type BereqMethod vslparser.Tag
 
-func (b BereqMethod) Method() string {
-	return b.Value
-}
+func (b BereqMethod) Method() string { return b.Value }
 
 // BerespProtocol stands for Backend response protocol. The HTTP protocol version
 // information.
 type BerespProtocol vslparser.Tag
 
-func (b BerespProtocol) Protocol() string {
-	return b.Value
-}
+func (b BerespProtocol) Protocol() string { return b.Value }
 
 // BerespStatus stands for Backend response status. The HTTP response status
 // code.
 type BerespStatus vslparser.Tag
 
-func (b BerespStatus) Status() int {
-	return parseInt(b.Value)
-}
+func (b BerespStatus) Status() int { return parseInt(b.Value) }
 
 // Link links to a child VXID. Links this VXID to any child VXID it initiates.
 type Link vslparser.Tag
@@ -113,7 +108,7 @@ func (s SessClose) Reason() string {
 	return sp[0]
 }
 
-func (s SessClose) Duration() time.Duration {
+func (s SessClose) Duration() (time.Duration, error) {
 	i := strings.LastIndex(s.Value, " ")
 	return parseDuration(s.Value[i+1:])
 }
@@ -136,7 +131,7 @@ func (s SessOpen) LocalAddr() (addr net.IP, port int) {
 	return net.ParseIP(sp[3]), parseInt(sp[4])
 }
 
-func (s SessOpen) SessionStart() time.Time {
+func (s SessOpen) SessionStart() (time.Time, error) {
 	sp := strings.SplitN(s.Value, " ", 7)
 	return parseUnixFloat(sp[5])
 }
@@ -154,17 +149,17 @@ func (t Timestamp) Event() string {
 	return sp[0]
 }
 
-func (t Timestamp) Time() time.Time {
+func (t Timestamp) Time() (time.Time, error) {
 	sp := strings.SplitN(t.Value, " ", 3)
 	return parseUnixFloat(sp[1])
 }
 
-func (t Timestamp) SinceStart() time.Duration {
+func (t Timestamp) SinceStart() (time.Duration, error) {
 	sp := strings.SplitN(t.Value, " ", 4)
 	return parseDuration(sp[2])
 }
 
-func (t Timestamp) SinceLast() time.Duration {
+func (t Timestamp) SinceLast() (time.Duration, error) {
 	i := strings.LastIndex(t.Value, " ")
 	return parseDuration(t.Value[i+1:])
 }
@@ -177,19 +172,19 @@ func (h Hit) VXID() int {
 	return parseInt(sp[0])
 }
 
-func (h Hit) TTL() float64 {
+func (h Hit) TTL() (float64, error) {
 	sp := strings.SplitN(h.Value, " ", 3)
-	return parseFloat(sp[1])
+	return strconv.ParseFloat(sp[1], 64)
 }
 
-func (h Hit) Grace() float64 {
+func (h Hit) Grace() (float64, error) {
 	sp := strings.SplitN(h.Value, " ", 4)
-	return parseFloat(sp[2])
+	return strconv.ParseFloat(sp[2], 64)
 }
 
-func (h Hit) Keep() float64 {
+func (h Hit) Keep() (float64, error) {
 	i := strings.LastIndex(h.Value, " ")
-	return parseFloat(h.Value[i+1:])
+	return strconv.ParseFloat(h.Value[i+1:], 64)
 }
 
 func parseInt(s string) int {
@@ -200,35 +195,27 @@ func parseInt(s string) int {
 	return i
 }
 
-func parseFloat(s string) float64 {
-	f, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return 0
-	}
-	return f
-}
-
-func parseDuration(s string) time.Duration {
+func parseDuration(s string) (time.Duration, error) {
 	tdNano, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return 0
+		return 0, fmt.Errorf("invalid float: %w", err)
 	}
-	return time.Duration(tdNano * 1e9)
+	return time.Duration(tdNano * float64(time.Second)), nil
 }
 
-func parseUnixFloat(s string) time.Time {
-	// TODO consider split by dot as Varnish doesn't try to scam us.
-	// It would be faster and resilient to float precision issues.
-
+func parseUnixFloat(s string) (time.Time, error) {
+	// Float parsing is even slightly faster than if we tried to parse float
+	// by hand on '.' as delimiter.
 	unixnano, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return time.Time{}
+		return time.Time{}, fmt.Errorf("invalid float: %w", err)
 	}
+
 	sec, dec := math.Modf(unixnano)
 	// round to microsecond
 	micros := int64(dec*1e6 + 0.5)
 	// add trailing zeros, Varnish returns microseconds only.
 	// adding zeros later to int type increases accuracy
 	nsec := micros * 1e3
-	return time.Unix(int64(sec), nsec)
+	return time.Unix(int64(sec), nsec), nil
 }
