@@ -92,13 +92,13 @@ func parseEntry(scanner *bufio.Scanner) (*Entry, error) {
 		if k == "" {
 			return nil, fmt.Errorf("parse error on line %q: empty key", line)
 		}
+		e.Tags = append(e.Tags,
+			Tag{Key: k, Value: v},
+		)
 		if k == "End" {
 			foundEnd = true
 			break
 		}
-		e.Tags = append(e.Tags,
-			Tag{Key: k, Value: v},
-		)
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
