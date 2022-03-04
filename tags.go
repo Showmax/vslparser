@@ -1,41 +1,47 @@
 package vslparser
 
-// Tags provides a set of utility functions on an array of Tags.
-type Tags []Tag
-
-func (t Tags) FirstWithKey(key string) (Tag, bool) {
-	return t.NthWithKey(key, 1)
+// Tags work as ordered dictionary for faster search in tags. They're meant
+// to be read-only.
+type Tags struct {
+	lookup map[string][]Tag
+	list   []Tag
 }
 
-func (t Tags) NthWithKey(key string, n int) (Tag, bool) {
-	var cnt int
-	for _, tag := range t {
-		if tag.Key == key {
-			cnt++
-			if cnt >= n {
-				return tag, true
-			}
-		}
-	}
-	return Tag{}, false
-}
-
-func (t Tags) LastWithKey(key string) (Tag, bool) {
-	for i := len(t) - 1; i > -1; i-- {
-		if t[i].Key == key {
-			return t[i], true
-		}
+// NewTags creates a Tags structure and does the expensive allocation.
+func NewTags(tags []Tag) Tags {
+	lookup := make(map[string][]Tag)
+	for _, tag := range tags {
+		lookup[tag.Key] = append(lookup[tag.Key], tag)
 	}
 
-	return Tag{}, false
+	return Tags{
+		lookup: lookup,
+		list:   tags,
+	}
 }
 
-func (t Tags) AllWithKey(key string) []Tag {
-	tags := make([]Tag, 0, 1)
-	for _, tag := range t {
-		if tag.Key == key {
-			tags = append(tags, tag)
-		}
+func (t *Tags) FirstWithKey(key string) (Tag, bool) { return t.NthWithKey(1, key) }
+
+func (t *Tags) NthWithKey(n int, key string) (Tag, bool) {
+	tags, ok := t.lookup[key]
+	if !ok || len(tags) < n {
+		return Tag{}, false
 	}
-	return tags
+
+	return tags[n-1], true
 }
+
+func (t *Tags) LastWithKey(key string) (Tag, bool) {
+	tags, ok := t.lookup[key]
+	if !ok || len(tags) < 1 {
+		return Tag{}, false
+	}
+
+	return tags[len(tags)-1], true
+}
+
+// AllWithKey returns a readonly slice of all tags with a given key.
+func (t *Tags) AllWithKey(key string) []Tag { return t.lookup[key] }
+
+// All returns a readonly slice of all tags in t.
+func (t *Tags) All() []Tag { return t.list }

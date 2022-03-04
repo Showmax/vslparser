@@ -31,7 +31,7 @@ func testTagArray() []vslparser.Tag {
 }
 
 func BenchmarkTags_AllWithKey(b *testing.B) {
-	tags := vslparser.Tags(testTagArray())
+	tags := vslparser.NewTags(testTagArray())
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
