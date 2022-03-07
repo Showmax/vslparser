@@ -90,8 +90,8 @@ func TestParseGroup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			parser := NewParser(strings.NewReader(tt.varnishlogs))
-			got, err := parser.ParseGroup()
+			parser := NewSessionParser(strings.NewReader(tt.varnishlogs))
+			got, err := parser.Parse()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseGroup() error = %v, wantErr %v",
 					err, tt.wantErr)
@@ -112,8 +112,8 @@ func BenchmarkParseGroup(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		parser := NewParser(readers[i])
-		if _, err := parser.ParseGroup(); err != nil {
+		parser := NewSessionParser(readers[i])
+		if _, err := parser.Parse(); err != nil {
 			b.Fatal(err)
 		}
 	}
