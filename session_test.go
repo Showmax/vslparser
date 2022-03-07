@@ -2,21 +2,25 @@ package vslparser
 
 import (
 	"io"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-const groupExample = `*   << Session  >> 413073608
+// Note: Session must end with an empty line '\n\n'.
+const sessionExample = `*   << Session  >> 413073608
 -   Begin          sess 0 HTTP/1
 -   Link           req 413073609 rxreq
 -   End
 **  << Request  >> 413073609
 --  Begin          req 413073608 rxreq
 --  ReqURL         /healthz
---  End`
+--  End
 
-func TestParseGroup(t *testing.T) {
+`
+
+func TestSessionParser_Parse(t *testing.T) {
 	result := []Entry{
 		{
 			Kind:  "Session",
@@ -31,6 +35,7 @@ func TestParseGroup(t *testing.T) {
 					Key:   "Link",
 					Value: "req 413073609 rxreq",
 				},
+				{Key: "End"},
 			},
 		}, {
 			Kind:  "Request",
@@ -44,6 +49,7 @@ func TestParseGroup(t *testing.T) {
 					Key:   "ReqURL",
 					Value: "/healthz",
 				},
+				{Key: "End"},
 			},
 		},
 	}
@@ -51,70 +57,71 @@ func TestParseGroup(t *testing.T) {
 	tests := []struct {
 		name        string
 		varnishlogs string
-		want        []Entry
-		wantErr     bool
+		want        [][]Entry
 	}{
 		{
-			name:        "empty string",
+			name:        "empty_string",
 			varnishlogs: "",
-			wantErr:     true,
 		}, {
-			name:        "empty lines",
+			name:        "empty_lines",
 			varnishlogs: "\n\n\n",
-			wantErr:     true,
+			want:        [][]Entry{nil, nil, nil},
 		}, {
-			name:        "no empty line at the beginning or end",
-			varnishlogs: groupExample,
-			want:        result,
+			name:        "no_empty_line_at_the_beginning_or_end",
+			varnishlogs: sessionExample,
+			want:        [][]Entry{result},
 		}, {
-			name:        "no empty line at the beginning",
-			varnishlogs: groupExample + "\n",
-			want:        result,
+			name:        "no_empty_line_at_the_beginning",
+			varnishlogs: sessionExample + "\n",
+			want:        [][]Entry{result, nil},
 		}, {
-			name:        "no empty line at the end",
-			varnishlogs: "\n" + groupExample,
-			want:        result,
+			name:        "no_empty_line_at_the_end",
+			varnishlogs: "\n" + sessionExample,
+			want:        [][]Entry{nil, result},
 		}, {
-			name:        "multiple empty lines at the beginning",
-			varnishlogs: "\n\n\n\n" + groupExample,
-			want:        result,
+			name:        "multiple_empty_lines_at_the_beginning",
+			varnishlogs: "\n\n\n\n" + sessionExample,
+			want:        [][]Entry{nil, nil, nil, nil, result},
 		}, {
-			name:        "multiple empty lines at the end",
-			varnishlogs: groupExample + "\n\n\n\n",
-			want:        result,
+			name:        "multiple_empty_lines_at_the_end",
+			varnishlogs: sessionExample + "\n\n\n\n",
+			want:        [][]Entry{result, nil, nil, nil, nil},
 		}, {
-			name:        "two groups",
-			varnishlogs: groupExample + "\n\n" + groupExample,
-			want:        result,
+			name:        "two_groups",
+			varnishlogs: sessionExample + sessionExample,
+			want:        [][]Entry{result, result},
 		},
 	}
+
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			r := require.New(t)
 			parser := NewSessionParser(strings.NewReader(tt.varnishlogs))
-			got, err := parser.Parse()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseGroup() error = %v, wantErr %v",
-					err, tt.wantErr)
-				return
+
+			for i, expected := range tt.want {
+				got, err := parser.Parse()
+				r.NoError(err, "index: %d/%d\n", i, len(tt.want))
+				r.Equal(expected, got, "index: %d/%d\n", i, len(tt.want))
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseGroup() got = \n%v, want \n%v", got, tt.want)
-			}
+
+			_, err := parser.Parse()
+			r.Equal(io.EOF, err)
 		})
 	}
 }
 
-func BenchmarkParseGroup(b *testing.B) {
+func BenchmarkSessionParser_Parse(b *testing.B) {
 	readers := make([]io.Reader, b.N)
 	for i := range readers {
-		readers[i] = strings.NewReader(groupExample)
+		readers[i] = strings.NewReader(sessionExample)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		parser := NewSessionParser(readers[i])
 		if _, err := parser.Parse(); err != nil {
-			b.Fatal(err)
+			b.Fatalf("unexpected error: %s", err.Error())
 		}
 	}
 }
