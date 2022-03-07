@@ -14,3 +14,12 @@ type Tag struct {
 	Key   string
 	Value string
 }
+
+const (
+	// KindRequest is a Kind string identifying Varnish Request object.
+	KindRequest = "Request"
+	// KindBeReq is a Kind string identifying Varnish BeReq object.
+	KindBeReq = "BeReq"
+	// KindSession is a Kind string identifying Varnish Session objects.
+	KindSession = "Session"
+)

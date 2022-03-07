@@ -19,7 +19,7 @@ func NewRequestParser(r io.Reader) *RequestParser {
 	}
 }
 
-func (p *RequestParser) ParseRequest() ([]Entry, error) {
+func (p *RequestParser) Parse() ([]Entry, error) {
 	var entries []Entry
 	for i := 0; p.scanner.Scan(); i++ {
 		// Empty line '\n\n' is request log group delimiter.
