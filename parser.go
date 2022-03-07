@@ -8,14 +8,14 @@ import (
 	"strings"
 )
 
-// Parser is a type implementing varnishlog parsing functionality.
-type Parser struct {
+// EntryParser implements varnishlog entry-by-entry parsing functionality.
+type EntryParser struct {
 	scanner *bufio.Scanner
 }
 
-// NewParser creates a new parser reading r.
-func NewParser(r io.Reader) *Parser {
-	return &Parser{
+// NewParser creates a new EntryParser reading & parsing r.
+func NewParser(r io.Reader) *EntryParser {
+	return &EntryParser{
 		scanner: bufio.NewScanner(r),
 	}
 }
@@ -54,7 +54,7 @@ func splitLine(s string) (string, string) {
 // is kept mostly in its textual form. Only basic processing, such as splitting
 // lines into fields with a key and a value, are performed. The Entry struct
 // provides various convenience methods which perform the subsequent parsing.
-func (p *Parser) Parse() (Entry, error) {
+func (p *EntryParser) Parse() (Entry, error) {
 	if err := skipEmptyLines(p.scanner); err != nil {
 		return Entry{}, err
 	}
