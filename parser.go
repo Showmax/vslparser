@@ -13,8 +13,8 @@ type EntryParser struct {
 	scanner *bufio.Scanner
 }
 
-// NewParser creates a new EntryParser reading & parsing r.
-func NewParser(r io.Reader) *EntryParser {
+// NewEntryParser creates a new EntryParser reading & parsing r.
+func NewEntryParser(r io.Reader) *EntryParser {
 	return &EntryParser{
 		scanner: bufio.NewScanner(r),
 	}

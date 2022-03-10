@@ -39,7 +39,7 @@ func TestSplitLine(t *testing.T) {
 
 // testEntryParseOK tests that input is entry-parsed as expected without errors.
 func testEntryParseOK(t testing.TB, expected Entry, input string) {
-	got, err := NewParser(strings.NewReader(input)).Parse()
+	got, err := NewEntryParser(strings.NewReader(input)).Parse()
 	require.NoError(t, err)
 	require.Equal(t, expected, got)
 }
@@ -48,7 +48,7 @@ func testEntryParseOK(t testing.TB, expected Entry, input string) {
 // from expected without errors.
 func testEntryParseMultipleOK(t testing.TB, expected []Entry, input string) {
 	r := require.New(t)
-	parser := NewParser(strings.NewReader(input))
+	parser := NewEntryParser(strings.NewReader(input))
 
 	for _, ent := range expected {
 		got, err := parser.Parse()
@@ -59,7 +59,7 @@ func testEntryParseMultipleOK(t testing.TB, expected []Entry, input string) {
 
 // testEntryParseError tests that entry-parsing of input produces an error.
 func testEntryParseError(t testing.TB, input string) {
-	_, err := NewParser(strings.NewReader(input)).Parse()
+	_, err := NewEntryParser(strings.NewReader(input)).Parse()
 	require.Error(t, err)
 	t.Logf("parsing %q gives: %s\n", input, err.Error())
 }
@@ -118,7 +118,7 @@ func TestEOF(t *testing.T) {
 	require.NoError(t, err)
 	defer f.Close()
 
-	_, err = NewParser(f).Parse()
+	_, err = NewEntryParser(f).Parse()
 	if err != io.EOF {
 		t.Errorf("parsing should result in an EOF error. Got error: '%s'", err)
 	}
@@ -174,7 +174,7 @@ func BenchmarkEntryParser_Parse(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		parser := NewParser(readers[i])
+		parser := NewEntryParser(readers[i])
 		if _, err := parser.Parse(); err != nil {
 			b.Fatal(err)
 		}
