@@ -73,12 +73,13 @@ func parseEntry(scanner *bufio.Scanner) (Entry, error) {
 		return Entry{}, fmt.Errorf("header line was expected")
 	}
 	e.Level = len(header[0]) // number of asterisks
-
-	var err error
 	e.Kind = header[2]
-	if e.VXID, err = strconv.Atoi(header[4]); err != nil {
+
+	vxid, err := strconv.ParseUint(header[4], 10, 32)
+	if err != nil {
 		return Entry{}, fmt.Errorf("failed to parse VXID: %w", err)
 	}
+	e.VXID = VXID(vxid)
 
 	// Parse log entries, e.g.:
 	// -   ReqStart       136.243.103.218 53602
@@ -95,7 +96,7 @@ func parseEntry(scanner *bufio.Scanner) (Entry, error) {
 
 		e.Tags = append(e.Tags, tag)
 
-		if tag.Key == "End" {
+		if tag.Key == TagEnd {
 			foundEnd = true
 			break
 		}
