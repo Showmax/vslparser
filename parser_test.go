@@ -3,9 +3,10 @@ package vslparser
 import (
 	"io"
 	"os"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type kv struct {
@@ -36,54 +37,46 @@ func TestSplitLine(t *testing.T) {
 	}
 }
 
-// testParseOK tests that s is parsed as e without errors.
-func testParseOK(t *testing.T, e Entry, s string) {
-	got, err := NewParser(strings.NewReader(s)).Parse()
-	if err != nil {
-		t.Errorf("failed to parse %q: %v", s, err)
-		return
-	}
-	if !reflect.DeepEqual(e, got) {
-		t.Errorf("parsing %q should give %v, got %v", s, e, got)
-	}
+// testEntryParseOK tests that input is entry-parsed as expected without errors.
+func testEntryParseOK(t testing.TB, expected Entry, input string) {
+	got, err := NewParser(strings.NewReader(input)).Parse()
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
 }
 
-// testParseMultipleOK tests that s is parsed as a chain of entries from e
-// without errors.
-func testParseMultipleOK(t *testing.T, e []Entry, s string) {
-	parser := NewParser(strings.NewReader(s))
-	for _, ent := range e {
+// testEntryParseMultipleOK tests that input is entry-parsed as a chain of entries
+// from expected without errors.
+func testEntryParseMultipleOK(t testing.TB, expected []Entry, input string) {
+	r := require.New(t)
+	parser := NewParser(strings.NewReader(input))
+
+	for _, ent := range expected {
 		got, err := parser.Parse()
-		if err != nil {
-			t.Errorf("failed to parse %q: %v", s, err)
-			return
-		}
-		if !reflect.DeepEqual(ent, got) {
-			t.Errorf("parsing %q should give %v, got %v", s, ent, got)
-		}
+		r.NoError(err)
+		r.Equal(ent, got)
 	}
 }
 
-// testParseError tests that parsing s produces an error.
-func testParseError(t *testing.T, s string) {
-	_, err := NewParser(strings.NewReader(s)).Parse()
-	if err == nil {
-		t.Errorf("parsing %q should be a parse error", s)
-	} else {
-		t.Logf("parsing %q gives: %v", s, err)
-	}
+// testEntryParseError tests that entry-parsing of input produces an error.
+func testEntryParseError(t testing.TB, input string) {
+	_, err := NewParser(strings.NewReader(input)).Parse()
+	require.Error(t, err)
+	t.Logf("parsing %q gives: %s\n", input, err.Error())
 }
 
-// TestParse tests that various inputs are either parsed correctly or produce
-// errors.
-func TestParse(t *testing.T) {
-	testParseOK(t, Entry{
+// TestEntryParser_Parse tests that various entry inputs are either parsed
+// correctly or produce errors.
+func TestEntryParser_Parse(t *testing.T) {
+	testEntryParseOK(t, Entry{
 		Level: 1,
 		Kind:  "BeReq",
 		VXID:  123,
+		Tags: []Tag{
+			{"End", ""},
+		},
 	}, "* << BeReq >> 123\n- End")
 
-	testParseOK(t, Entry{
+	testEntryParseOK(t, Entry{
 		Level: 1,
 		Kind:  "Request",
 		VXID:  40000000,
@@ -91,37 +84,43 @@ func TestParse(t *testing.T) {
 			{"Foo", "Bar"},
 			{"Foo", "Baz"},
 			{"Bar", "Foo  Bar    Baz	"}, // Trailing tab valid.
+			{"End", ""},
 		},
 	}, "*   <<  Request >> 40000000\n- Foo Bar\n-Foo Baz\n- Bar     Foo  Bar    Baz	\n- End")
-	testParseMultipleOK(t, []Entry{
+	testEntryParseMultipleOK(t, []Entry{
 		{
 			Level: 1,
 			Kind:  "BeReq",
 			VXID:  123,
+			Tags: []Tag{
+				{"End", ""},
+			},
 		},
 		{
 			Level: 1,
 			Kind:  "BeReq",
 			VXID:  124,
+			Tags: []Tag{
+				{"End", ""},
+			},
 		},
 	}, "* << BeReq >> 123\n- End\n\n* << BeReq >> 124\n- End")
 
-	testParseError(t, "")
-	testParseError(t, "- ")
-	testParseError(t, "* << Request >> 1\n - Foo Bar\n- End")
-	testParseError(t, "* << Request >> Foo")
-	testParseError(t, "* << Request >> 1")
+	testEntryParseError(t, "")
+	testEntryParseError(t, "- ")
+	testEntryParseError(t, "* << Request >> 1\n - Foo Bar\n- End")
+	testEntryParseError(t, "* << Request >> Foo")
+	testEntryParseError(t, "* << Request >> 1")
 }
 
 func TestEOF(t *testing.T) {
-	f, _ := os.Open(os.DevNull)
+	f, err := os.Open(os.DevNull)
+	require.NoError(t, err)
 	defer f.Close()
 
-	_, err := NewParser(f).Parse()
+	_, err = NewParser(f).Parse()
 	if err != io.EOF {
 		t.Errorf("parsing should result in an EOF error. Got error: '%s'", err)
-	} else {
-		t.Logf("parsing properly returned EOF")
 	}
 }
 
@@ -167,7 +166,7 @@ const entryExample = `
 -   Foo            Bar Not a named field because there's no ':' after 'Key'
 -   End`
 
-func BenchmarkParse(b *testing.B) {
+func BenchmarkEntryParser_Parse(b *testing.B) {
 	readers := make([]io.Reader, b.N)
 	for i := range readers {
 		readers[i] = strings.NewReader(entryExample)
