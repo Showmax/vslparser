@@ -1,47 +1,40 @@
 package vslparser
 
-// Tags work as ordered dictionary for faster search in tags. They're meant
-// to be read-only.
-type Tags struct {
-	lookup map[string][]Tag
-	list   []Tag
+// Tags is an array of VSL tags with added functionality.
+//
+// Contrary to TagSet, Tags are much cheaper to create as it doesn't perform any
+// allocations, nor any smart handling. On the other hand searches in plain Tags
+// take linear time.
+type Tags []Tag
+
+// FirstWithKey finds first tag with key key in t. This method takes O(n).
+func (t Tags) FirstWithKey(key string) (Tag, bool) {
+	return t.NthWithKey(key, 1)
 }
 
-// NewTags creates a Tags structure and does the expensive allocation.
-func NewTags(tags []Tag) Tags {
-	lookup := make(map[string][]Tag)
-	for _, tag := range tags {
-		lookup[tag.Key] = append(lookup[tag.Key], tag)
+// NthWithKey finds Nth tag with key key in t. This method takes O(n).
+func (t Tags) NthWithKey(key string, n int) (Tag, bool) {
+	var cnt int
+	for _, tag := range t {
+		if tag.Key == key {
+			cnt++
+		}
+
+		if cnt == n {
+			return tag, true
+		}
 	}
 
-	return Tags{
-		lookup: lookup,
-		list:   tags,
-	}
+	return Tag{}, false
 }
 
-func (t *Tags) FirstWithKey(key string) (Tag, bool) { return t.NthWithKey(1, key) }
-
-func (t *Tags) NthWithKey(n int, key string) (Tag, bool) {
-	tags, ok := t.lookup[key]
-	if !ok || len(tags) < n {
-		return Tag{}, false
+// LastWithKey finds last tag with key key in t. This method takes O(n).
+func (t Tags) LastWithKey(key string) (Tag, bool) {
+	for i := len(t) - 1; i >= 0; i-- {
+		if t[i].Key == key {
+			return t[i], true
+		}
 	}
 
-	return tags[n-1], true
+	return Tag{}, false
 }
-
-func (t *Tags) LastWithKey(key string) (Tag, bool) {
-	tags, ok := t.lookup[key]
-	if !ok || len(tags) < 1 {
-		return Tag{}, false
-	}
-
-	return tags[len(tags)-1], true
-}
-
-// AllWithKey returns a readonly slice of all tags with a given key.
-func (t *Tags) AllWithKey(key string) []Tag { return t.lookup[key] }
-
-// All returns a readonly slice of all tags in t.
-func (t *Tags) All() []Tag { return t.list }
