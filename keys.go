@@ -110,4 +110,14 @@ const (
 	// buffer and that old (not yet consumed logs) are being overwritten by
 	// new logs by Varnish.
 	VSLStoreOverflow = "store overflow"
+	// VSLFlush is a value of VSL tag informing that varnishlog has been
+	// forced to immediately terminate log output. In contrast to
+	// VSLStoreOverflow, this error happens if for example Varnish instance
+	// dies or if the varnishlog is forced to immediately exit.
+	VSLFlush = "flush"
 )
+
+// EndNoteSynth is a tag value of End tag in case something went wrong and the
+// varnishlog is incomplete. In such a case, there is typically a VCL tag logged
+// which provides further details.
+const EndNoteSynth = "synth"
