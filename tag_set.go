@@ -20,19 +20,23 @@ func NewTagSet(tags []Tag) TagSet {
 	}
 }
 
-func (t *TagSet) FirstWithKey(key string) (Tag, bool) { return t.NthWithKey(1, key) }
+// FirstWithKey returns first tag with key k in t. This method takes O(1).
+func (t *TagSet) FirstWithKey(k string) (Tag, bool) { return t.NthWithKey(k, 0) }
 
-func (t *TagSet) NthWithKey(n int, key string) (Tag, bool) {
-	tags, ok := t.lookup[key]
-	if !ok || len(tags) < n {
+// NthWithKey returns Nth (indexed from zero) tag with key k in t. This method
+// takes O(1).
+func (t *TagSet) NthWithKey(k string, n uint) (Tag, bool) {
+	tags, ok := t.lookup[k]
+	if !ok || uint(len(tags)) <= n {
 		return Tag{}, false
 	}
 
-	return tags[n-1], true
+	return tags[n], true
 }
 
-func (t *TagSet) LastWithKey(key string) (Tag, bool) {
-	tags, ok := t.lookup[key]
+// LastWithKey returns last tag with key k in t. This method takes O(1).
+func (t *TagSet) LastWithKey(k string) (Tag, bool) {
+	tags, ok := t.lookup[k]
 	if !ok || len(tags) < 1 {
 		return Tag{}, false
 	}
@@ -41,7 +45,7 @@ func (t *TagSet) LastWithKey(key string) (Tag, bool) {
 }
 
 // AllWithKey returns a readonly slice of all tags with a given key.
-func (t *TagSet) AllWithKey(key string) []Tag { return t.lookup[key] }
+func (t *TagSet) AllWithKey(k string) []Tag { return t.lookup[k] }
 
 // All returns a readonly slice of all tags in t.
 func (t *TagSet) All() []Tag { return t.list }

@@ -10,8 +10,8 @@ const (
 )
 
 const (
-	// TagBegin is tag key informing about begin of tags section (start of
-	// VXID).
+	// TagBegin is tag key informing about begining of tags section (start
+	// of VXID).
 	TagBegin = "Begin"
 	// TagEnd is tag key informing about end of tags section (end of VXID).
 	TagEnd = "End"
@@ -27,20 +27,20 @@ const (
 	// TagRespStatus is a tag key identifying HTTP response status code.
 	TagRespStatus = "RespStatus"
 
-	// TagReqHeader is a tag informing that Request header was set.
+	// TagReqHeader is a tag indicating that Request header was set.
 	TagReqHeader = "ReqHeader"
-	// TagReqUnset is a tag informing that Request header was unset.
+	// TagReqUnset is a tag indicating that Request header was unset.
 	TagReqUnset = "ReqUnset"
-	// TagRespHeader is a tag informing that Response header was set.
+	// TagRespHeader is a tag indicating that Response header was set.
 	TagRespHeader = "RespHeader"
-	// TagRespUnset is a tag informing that Response header was unset.
+	// TagRespUnset is a tag indicating that Response header was unset.
 	TagRespUnset = "RespUnset"
-	// TagBeReqHeader is a tag informing that BeReq header was set.
+	// TagBeReqHeader is a tag indicating that BeReq header was set.
 	TagBeReqHeader = "BereqHeader"
-	// TagBeReqUnset is a tag informing that BeReq header was unset.
+	// TagBeReqUnset is a tag indicating that BeReq header was unset.
 	TagBeReqUnset = "BereqUnset"
 
-	// TagBackendOpen is a tag informing that backend connection has been
+	// TagBackendOpen is a tag indicating that backend connection has been
 	// open.
 	TagBackendOpen = "BackendOpen"
 	// TagFetchError is a tag informing about reason of backend fetch
@@ -105,12 +105,12 @@ const (
 )
 
 const (
-	// VSLStoreOverflow is a value of VSL tag informing that varnishlog is
+	// VSLStoreOverflow is a value of VSL tag indicating that varnishlog is
 	// not consuming VSL logs fast enough from the shared memory circular
 	// buffer and that old (not yet consumed logs) are being overwritten by
 	// new logs by Varnish.
 	VSLStoreOverflow = "store overflow"
-	// VSLFlush is a value of VSL tag informing that varnishlog has been
+	// VSLFlush is a value of VSL tag indicating that varnishlog has been
 	// forced to immediately terminate log output. In contrast to
 	// VSLStoreOverflow, this error happens if for example Varnish instance
 	// dies or if the varnishlog is forced to immediately exit.

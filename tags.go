@@ -7,31 +7,33 @@ package vslparser
 // take linear time.
 type Tags []Tag
 
-// FirstWithKey finds first tag with key key in t. This method takes O(n).
-func (t Tags) FirstWithKey(key string) (Tag, bool) {
-	return t.NthWithKey(key, 1)
+// FirstWithKey finds first tag with key k in t. This method takes O(n).
+func (t Tags) FirstWithKey(k string) (Tag, bool) {
+	return t.NthWithKey(k, 0)
 }
 
-// NthWithKey finds Nth tag with key key in t. This method takes O(n).
-func (t Tags) NthWithKey(key string, n int) (Tag, bool) {
-	var cnt int
+// NthWithKey finds Nth (indexed from zero) tag with key k in t. This method
+// takes O(n).
+func (t Tags) NthWithKey(k string, n uint) (Tag, bool) {
+	var cnt uint
 	for _, tag := range t {
-		if tag.Key == key {
-			cnt++
+		if tag.Key != k {
+			continue
 		}
 
 		if cnt == n {
 			return tag, true
 		}
+		cnt++
 	}
 
 	return Tag{}, false
 }
 
-// LastWithKey finds last tag with key key in t. This method takes O(n).
-func (t Tags) LastWithKey(key string) (Tag, bool) {
+// LastWithKey finds last tag with key k in t. This method takes O(n).
+func (t Tags) LastWithKey(k string) (Tag, bool) {
 	for i := len(t) - 1; i >= 0; i-- {
-		if t[i].Key == key {
+		if t[i].Key == k {
 			return t[i], true
 		}
 	}
