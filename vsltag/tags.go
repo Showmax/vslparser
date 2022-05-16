@@ -47,9 +47,9 @@ func (b Begin) Type() string {
 	return sp[0]
 }
 
-func (b Begin) ParentVXID() int {
+func (b Begin) ParentVXID() vslparser.VXID {
 	sp := strings.SplitN(b.Value, " ", 3)
-	return parseInt(sp[1])
+	return parseVXID(sp[1])
 }
 
 func (b Begin) Reason() string {
@@ -167,9 +167,9 @@ func (t Timestamp) SinceLast() (time.Duration, error) {
 // Hit object in cache. Object looked up in cache.
 type Hit vslparser.Tag
 
-func (h Hit) VXID() int {
+func (h Hit) VXID() vslparser.VXID {
 	sp := strings.SplitN(h.Value, " ", 2)
-	return parseInt(sp[0])
+	return parseVXID(sp[0])
 }
 
 func (h Hit) TTL() (float64, error) {
@@ -193,6 +193,14 @@ func parseInt(s string) int {
 		return 0
 	}
 	return i
+}
+
+func parseVXID(s string) vslparser.VXID {
+	vxid, err := strconv.ParseUint(s, 10, 32)
+	if err != nil {
+		return 0
+	}
+	return vslparser.VXID(vxid)
 }
 
 func parseDuration(s string) (time.Duration, error) {

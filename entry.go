@@ -7,7 +7,7 @@ package vslparser
 // VXID.
 //
 // Note: Zero value (vxid == 0) is not reported in any varnishlog mode with an
-// exception or 'raw' mode. Consequently, zero value of VXID can be in some
+// exception of 'raw' mode. Consequently, zero value of VXID can be in some
 // contexts (but not all!) used to indicate and "invalid VXID" or "none" value.
 // https://varnish-cache.org/docs/trunk/reference/vsl-query.html
 type VXID uint32
