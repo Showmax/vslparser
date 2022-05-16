@@ -18,7 +18,7 @@ func Example() {
 		log.Fatal(err)
 	}
 
-	parser := vslparser.NewParser(stdout)
+	parser := vslparser.NewEntryParser(stdout)
 	for {
 		entry, err := parser.Parse()
 		if err != nil {

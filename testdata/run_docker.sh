@@ -11,7 +11,7 @@ set -eu
 
 cd -- "$(dirname -- "$0")"
 
-readonly image_name="${1:varnish}"
+readonly image_name="${1:-varnish}"
 
 docker build -t "$image_name" .
 docker run --rm -it -v "$(pwd)":/output "$image_name" /bin/bash
