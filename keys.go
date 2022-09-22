@@ -39,6 +39,10 @@ const (
 	TagBeReqHeader = "BereqHeader"
 	// TagBeReqUnset is a tag indicating that BeReq header was unset.
 	TagBeReqUnset = "BereqUnset"
+	// TagBeRespHeader is a tag indication that BeResp header was set.
+	TagBeRespHeader = "BerespHeader"
+	// TagBeRespUnset is a tag indication that BeResp header was unset.
+	TagBeRespUnset = "BerespUnset"
 
 	// TagBackendOpen is a tag indicating that backend connection has been
 	// open.
